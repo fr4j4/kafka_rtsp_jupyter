@@ -5,7 +5,8 @@ services:
   #Producer to obtain data from RTSP and write into Kafka queue
   goproducerrtsp:
     image: goproducerrtsp
-    container_name: goproducerrtsp   
+    container_name: goproducerrtsp
+    build: .
     environment:
       - TOPICNAME=timeseries_1
       - KAFKAPORT=kafka:29092
