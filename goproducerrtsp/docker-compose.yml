@@ -8,9 +8,11 @@ services:
     container_name: goproducerrtsp
     build: .
     environment:
-      - TOPICNAME=timeseries_1
+      - CAMERA_ID=cam_1
       - KAFKAPORT=kafka:29092
       - RTSPLINK=rtsp://184.72.239.149/vod/mp4:BigBuckBunny_175k.mov
+      - POLYGONS="[1,2;3,4;5,6;7,8;9,10]"
+      - 
         # Image format = RGBA, uint8
         # Num of channels = 3
         # Total pixels = 38400
