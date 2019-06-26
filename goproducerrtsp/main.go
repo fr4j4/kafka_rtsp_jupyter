@@ -13,7 +13,8 @@ import (
 	"github.com/adaickalavan/kafkapc"
 	"gocv.io/x/gocv"
 )
-
+// https://godoc.org/github.com/Shopify/sarama
+// https://github.com/Shopify/sarama/tree/master/examples
 //Hooks that may be overridden for testing
 var inputReader io.Reader = os.Stdin
 var outputWriter io.Writer = os.Stdout
@@ -25,12 +26,15 @@ func main() {
 	//Sarama logger
 	sarama.Logger = log.New(outputWriter, "[saramaLog]", log.Ltime)
 
+	var polygons = []string{os.Getenv("POLYGONS")}
+	var camera_id = os.Getenv("CAMERA_ID")
+
 	//Create a Kafka producer
 	var brokers = []string{os.Getenv("KAFKAPORT")}
 	var err error
 	producer, err = kafkapc.CreateKafkaProducer(brokers)
 	if err != nil {
-		panic("Failed to connect to Kafka. Error: " + err.Error())
+		panic("Failed to connect to Kafka. Errimg.Pixor: " + err.Error())
 	}
 	//Close producer to flush(i.e., push) all batched messages into Kafka queue
 	defer func() { producer.Close() }()
@@ -47,7 +51,8 @@ func main() {
 		if !webcam.Read(&frame) {
 			continue
 		}
-
+		now := time.Now()
+		timestamp := now.UnixNano() / 1000000
 		// Type assert frame into RGBA image
 		imgInterface, err := frame.ToImage()
 		if err != nil {
@@ -64,6 +69,8 @@ func main() {
 			Channels: frame.Channels(),
 			Rows:     frame.Rows(),
 			Cols:     frame.Cols(),
+			Timestamp: timestamp,
+			Fps: 30,
 		}
 
 		//Prepare message to be sent to Kafka
@@ -72,9 +79,10 @@ func main() {
 			log.Fatal("Json marshalling error. Error:", err.Error())
 		}
 		msg := &sarama.ProducerMessage{
-			Topic:     os.Getenv("TOPICNAME"),
+			Topic:     camera_id,
 			Value:     sarama.ByteEncoder(docBytes),
 			Timestamp: time.Now(),
+			Polygons: polygons
 		}
 		//Send message into Kafka queue
 		producer.Input() <- msg
@@ -90,4 +98,9 @@ type Result struct {
 	Channels int    `json:"channels"`
 	Rows     int    `json:"rows"`
 	Cols     int    `json:"cols"`
+	CameraId  string `json:camera_id`
+	Fps int `json:fps`
+	Timestamp int64 `json:timestamp`
+	Polygons string `json:polygons`
+
 }
